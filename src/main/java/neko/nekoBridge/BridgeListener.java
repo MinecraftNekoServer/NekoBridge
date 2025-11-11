@@ -35,10 +35,21 @@ public class BridgeListener implements Listener {
     private final Map<String, UUID> placedBlocks = new HashMap<>();
     // 存储玩家放置的方块按时间顺序
     private final Map<UUID, Queue<String>> playerPlacedBlocksOrder = new HashMap<>();
+    // 存储每个玩家的个人出生点
+    private final Map<UUID, Location> playerSpawnPoints = new HashMap<>();
+    // 存储玩家当前站立的方块位置，用于检测是否移动到了新的方块
+    private final Map<UUID, String> playerCurrentBlock = new HashMap<>();
     private final NekoBridge plugin;
     
     public BridgeListener(NekoBridge plugin) {
         this.plugin = plugin;
+        
+        // 每秒检查一次玩家脚下的方块
+        plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            for (Player player : plugin.getServer().getOnlinePlayers()) {
+                checkPlayerSpawnPoint(player);
+            }
+        }, 20L, 20L); // 每秒执行一次（20个tick）
     }
     
     @EventHandler
@@ -75,6 +86,8 @@ public class BridgeListener implements Listener {
         
         // 清理玩家数据
         blockPlaceTimes.remove(playerId);
+        playerSpawnPoints.remove(playerId);
+        playerCurrentBlock.remove(playerId);
     }
     
     @EventHandler
@@ -92,13 +105,13 @@ public class BridgeListener implements Listener {
         destroyPlayerBlocks(playerId, player.getWorld());
         
         // 玩家死亡后立即复活
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
             player.spigot().respawn();
             
-            // 立即传送玩家到全局出生点并重新发放物品
-            teleportToSpawn(player);
+            // 立即传送玩家到个人出生点（如果存在）并重新发放物品
+            teleportToPlayerSpawn(player);
             ensureInfiniteSandstone(player);
-        }, 1L); // 延迟1个tick执行复活和传送
+        });
     }
     
     @EventHandler
@@ -341,5 +354,90 @@ public class BridgeListener implements Listener {
                 player.teleport(spawnLocation);
             }
         }
+    }
+    
+    private void checkPlayerSpawnPoint(Player player) {
+        UUID playerId = player.getUniqueId();
+        
+        // 获取玩家脚下的方块
+        Location playerLocation = player.getLocation();
+        Location blockLocation = playerLocation.clone();
+        blockLocation.setY(blockLocation.getY() - 1); // 脚下的方块
+        
+        // 创建方块位置的唯一标识
+        String blockKey = blockLocation.getWorld().getName() + "," + 
+                         blockLocation.getBlockX() + "," + 
+                         blockLocation.getBlockY() + "," + 
+                         blockLocation.getBlockZ();
+        
+        // 获取玩家之前站立的方块
+        String previousBlock = playerCurrentBlock.get(playerId);
+        
+        // 更新玩家当前站立的方块
+        playerCurrentBlock.put(playerId, blockKey);
+        
+        Block block = blockLocation.getBlock();
+        
+        // 检查是否是红石块（完成点）并且玩家是刚移动到这个方块上
+        if (block.getType() == Material.REDSTONE_BLOCK && 
+            (previousBlock == null || !previousBlock.equals(blockKey))) {
+            
+            // 传送玩家回全局出生点（如果有绿宝石出生点则传送到绿宝石出生点）
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                teleportToPlayerSpawn(player);
+                
+                // 规律破坏玩家方块
+                destroyPlayerBlocks(playerId, player.getWorld());
+            }, 1L);
+            
+            // 播放完成音效
+            player.playSound(playerLocation, Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.5F);
+            
+            // 在标题中显示完成信息
+            player.sendTitle(ChatColor.GOLD + "搭路完成！", 
+                            ChatColor.GREEN + "已传送回出生点", 
+                            10, 60, 20);
+        }
+        // 检查是否是绿宝石块，并且玩家是刚移动到这个方块上
+        else if (block.getType() == Material.EMERALD_BLOCK && 
+            (previousBlock == null || !previousBlock.equals(blockKey))) {
+            
+            // 只记录坐标，不记录朝向等信息
+            Location spawnPoint = new Location(
+                blockLocation.getWorld(),
+                blockLocation.getX() + 0.5, // 方块中心
+                blockLocation.getY() + 1,   // 方块上方
+                blockLocation.getZ() + 0.5  // 方块中心
+            );
+            
+            // 设置为玩家的个人出生点
+            playerSpawnPoints.put(playerId, spawnPoint);
+            
+            // 播放音效
+            player.playSound(playerLocation, Sound.ENTITY_PLAYER_LEVELUP, 1.0F, 1.0F);
+            
+            // 在标题中显示出生点已设置
+            player.sendTitle(ChatColor.GOLD + "出生点已设置", 
+                            ChatColor.GREEN + "当前位置已设为你的个人出生点", 
+                            10, 40, 10);
+        }
+    }
+    
+    private void teleportToPlayerSpawn(Player player) {
+        UUID playerId = player.getUniqueId();
+        
+        // 检查玩家是否有个人出生点
+        if (playerSpawnPoints.containsKey(playerId)) {
+            Location spawnPoint = playerSpawnPoints.get(playerId);
+            if (spawnPoint != null && spawnPoint.getWorld() != null) {
+                // 确保传送位置安全
+                spawnPoint.setY(spawnPoint.getY() + 1); // 稍微提高一点避免卡在方块里
+                player.teleport(spawnPoint);
+                return;
+            }
+        }
+        
+        // 如果没有个人出生点，传送回全局出生点
+        teleportToSpawn(player);
     }
 }
