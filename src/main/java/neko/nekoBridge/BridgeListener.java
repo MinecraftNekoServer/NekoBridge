@@ -4,6 +4,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -15,12 +16,16 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.World;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BridgeListener implements Listener {
     
@@ -28,6 +33,8 @@ public class BridgeListener implements Listener {
     private final Map<UUID, Queue<Long>> blockPlaceTimes = new HashMap<>();
     // 存储玩家放置的方块位置
     private final Map<String, UUID> placedBlocks = new HashMap<>();
+    // 存储玩家放置的方块按时间顺序
+    private final Map<UUID, Queue<String>> playerPlacedBlocksOrder = new HashMap<>();
     private final NekoBridge plugin;
     
     public BridgeListener(NekoBridge plugin) {
@@ -52,26 +59,32 @@ public class BridgeListener implements Listener {
     
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        UUID playerId = player.getUniqueId();
+        
         // 取消退出消息显示
         event.setQuitMessage(null);
         
-        // 清理玩家数据
-        UUID playerId = event.getPlayer().getUniqueId();
-        blockPlaceTimes.remove(playerId);
+        // 立即破坏该玩家放置的所有方块（不按顺序，因为玩家退出了）
+        destroyPlayerBlocksImmediately(playerId, player.getWorld());
         
-        // 清理玩家放置的方块记录
-        placedBlocks.entrySet().removeIf(entry -> entry.getValue().equals(playerId));
+        // 清理玩家数据
+        blockPlaceTimes.remove(playerId);
     }
     
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
+        UUID playerId = player.getUniqueId();
         
         // 取消死亡消息显示
         event.setDeathMessage(null);
         
         // 清除死亡掉落物
         event.getDrops().clear();
+        
+        // 破坏该玩家放置的所有方块
+        destroyPlayerBlocks(playerId, player.getWorld());
         
         // 玩家死亡后立即复活
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
@@ -136,6 +149,10 @@ public class BridgeListener implements Listener {
         String blockKey = block.getWorld().getName() + "," + block.getX() + "," + block.getY() + "," + block.getZ();
         placedBlocks.put(blockKey, playerId);
         
+        // 记录方块放置顺序
+        Queue<String> blockOrder = playerPlacedBlocksOrder.computeIfAbsent(playerId, k -> new LinkedList<>());
+        blockOrder.offer(blockKey);
+        
         long currentTime = System.currentTimeMillis();
         
         // 获取该玩家的放置时间队列
@@ -153,7 +170,7 @@ public class BridgeListener implements Listener {
         double bps = times.size() / 5.0;
         
         // 显示搭路速度小标题，仅在放置方块时显示
-        String subtitle = ChatColor.GOLD + "搭路速度: " + ChatColor.AQUA + String.format("%.2f", bps) + ChatColor.GOLD + " 方块/秒";
+        String subtitle = ChatColor.AQUA + String.format("%.2f", bps) + ChatColor.GOLD + " 方块/秒";
         player.sendTitle("", subtitle, 0, 40, 10); // 空标题，副标题显示速度，显示1.5秒 (0-40-10 ticks)
     }
     
@@ -209,5 +226,98 @@ public class BridgeListener implements Listener {
             pickaxe.addUnsafeEnchantment(Enchantment.DURABILITY, 3); // 无限耐久III (在1.12.2中，耐久度附魔等级3是最高等级)
             player.getInventory().addItem(pickaxe);
         }
+    }
+    
+    private void destroyPlayerBlocks(UUID playerId, World world) {
+        // 获取该玩家放置的方块按顺序
+        Queue<String> blockOrder = playerPlacedBlocksOrder.get(playerId);
+        if (blockOrder == null) {
+            return;
+        }
+        
+        // 按顺序逐步破坏方块
+        int delay = 0;
+        while (!blockOrder.isEmpty()) {
+            String blockKey = blockOrder.poll();
+            
+            // 确保方块仍然存在且属于该玩家
+            if (placedBlocks.containsKey(blockKey) && placedBlocks.get(blockKey).equals(playerId)) {
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    String[] parts = blockKey.split(",");
+                    if (parts.length == 4) {
+                        try {
+                            String worldName = parts[0];
+                            int x = Integer.parseInt(parts[1]);
+                            int y = Integer.parseInt(parts[2]);
+                            int z = Integer.parseInt(parts[3]);
+                            
+                            // 确保是同一个世界
+                            if (world.getName().equals(worldName)) {
+                                Block block = world.getBlockAt(x, y, z);
+                                // 播放破坏音效
+                                world.playSound(block.getLocation(), Sound.BLOCK_STONE_BREAK, 0.3F, 1.0F);
+                                // 设置为空气方块来"破坏"它
+                                block.setType(Material.AIR);
+                            }
+                        } catch (NumberFormatException e) {
+                            // 忽略解析错误
+                        }
+                    }
+                    
+                    // 从记录中移除这个方块
+                    placedBlocks.remove(blockKey);
+                }, delay);
+                
+                // 每次破坏间隔2个tick（0.1秒）
+                delay += 2;
+            }
+        }
+        
+        // 清空该玩家的方块顺序记录
+        playerPlacedBlocksOrder.remove(playerId);
+    }
+    
+    private void destroyPlayerBlocksImmediately(UUID playerId, World world) {
+        // 创建一个列表来存储需要移除的方块键
+        List<String> blocksToRemove = new ArrayList<>();
+        
+        // 遍历所有放置的方块，找到属于该玩家的
+        for (Map.Entry<String, UUID> entry : placedBlocks.entrySet()) {
+            if (entry.getValue().equals(playerId)) {
+                blocksToRemove.add(entry.getKey());
+            }
+        }
+        
+        // 破坏这些方块
+        for (String blockKey : blocksToRemove) {
+            String[] parts = blockKey.split(",");
+            if (parts.length == 4) {
+                try {
+                    String worldName = parts[0];
+                    int x = Integer.parseInt(parts[1]);
+                    int y = Integer.parseInt(parts[2]);
+                    int z = Integer.parseInt(parts[3]);
+                    
+                    // 确保是同一个世界
+                    if (world.getName().equals(worldName)) {
+                        Block block = world.getBlockAt(x, y, z);
+                        // 播放破坏音效
+                        world.playSound(block.getLocation(), Sound.BLOCK_STONE_BREAK, 0.3F, 1.0F);
+                        // 设置为空气方块来"破坏"它
+                        block.setType(Material.AIR);
+                    }
+                } catch (NumberFormatException e) {
+                    // 忽略解析错误
+                }
+            }
+        }
+        
+        // 从记录中移除这些方块
+        for (String blockKey : blocksToRemove) {
+            placedBlocks.remove(blockKey);
+        }
+        
+        // 清空该玩家的方块顺序记录
+        playerPlacedBlocksOrder.remove(playerId);
     }
 }
