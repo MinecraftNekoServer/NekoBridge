@@ -12,13 +12,15 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.UUID;
 
 public class BridgeListener implements Listener {
     
-    private final Map<UUID, Long> lastBlockPlaceTime = new HashMap<>();
-    private final Map<UUID, Double> blocksPerSecond = new HashMap<>();
+    // 存储每个玩家最近放置方块的时间戳队列
+    private final Map<UUID, Queue<Long>> blockPlaceTimes = new HashMap<>();
     private final NekoBridge plugin;
     
     public BridgeListener(NekoBridge plugin) {
@@ -33,8 +35,7 @@ public class BridgeListener implements Listener {
         event.setJoinMessage(null);
         
         // 初始化玩家数据
-        lastBlockPlaceTime.put(player.getUniqueId(), System.currentTimeMillis());
-        blocksPerSecond.put(player.getUniqueId(), 0.0);
+        blockPlaceTimes.put(player.getUniqueId(), new LinkedList<>());
         
         // 给玩家提供无限沙石
         if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SURVIVAL) {
@@ -49,8 +50,7 @@ public class BridgeListener implements Listener {
         
         // 清理玩家数据
         UUID playerId = event.getPlayer().getUniqueId();
-        lastBlockPlaceTime.remove(playerId);
-        blocksPerSecond.remove(playerId);
+        blockPlaceTimes.remove(playerId);
     }
     
     @EventHandler
@@ -62,22 +62,24 @@ public class BridgeListener implements Listener {
         ensureInfiniteSandstone(player);
         
         long currentTime = System.currentTimeMillis();
-        long lastTime = lastBlockPlaceTime.getOrDefault(playerId, currentTime);
         
-        // 计算放置方块的间隔时间
-        double timeDiff = (currentTime - lastTime) / 1000.0; // 转换为秒
+        // 获取该玩家的放置时间队列
+        Queue<Long> times = blockPlaceTimes.computeIfAbsent(playerId, k -> new LinkedList<>());
         
-        if (timeDiff > 0) {
-            // 计算每秒放置的方块数
-            double bps = 1.0 / timeDiff;
-            blocksPerSecond.put(playerId, bps);
-            
-            // 显示搭路速度小标题，仅在放置方块时显示
-            String subtitle = ChatColor.AQUA + String.format("%.2f", bps) + ChatColor.GOLD + " 方块/秒";
-            player.sendTitle("", subtitle, 0, 40, 10); // 空标题，副标题显示速度，显示1.5秒 (0-40-10 ticks)
+        // 添加当前时间戳
+        times.offer(currentTime);
+        
+        // 移除超过5秒的旧时间戳
+        while (!times.isEmpty() && currentTime - times.peek() > 5000) {
+            times.poll();
         }
         
-        lastBlockPlaceTime.put(playerId, currentTime);
+        // 计算5秒内的方块/秒
+        double bps = times.size() / 5.0;
+        
+        // 显示搭路速度小标题，仅在放置方块时显示
+        String subtitle = ChatColor.GOLD + "搭路速度: " + ChatColor.AQUA + String.format("%.2f", bps) + ChatColor.GOLD + " 方块/秒";
+        player.sendTitle("", subtitle, 0, 40, 10); // 空标题，副标题显示速度，显示1.5秒 (0-40-10 ticks)
     }
     
     private void ensureInfiniteSandstone(Player player) {
