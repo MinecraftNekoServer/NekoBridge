@@ -1,5 +1,6 @@
 package neko.nekoBridge;
 
+import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -9,7 +10,6 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,9 +40,6 @@ public class BridgeListener implements Listener {
         if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SURVIVAL) {
             ensureInfiniteSandstone(player);
         }
-        
-        // 开始显示搭路速度计时器
-        startSpeedDisplay(player);
     }
     
     @EventHandler
@@ -74,6 +71,10 @@ public class BridgeListener implements Listener {
             // 计算每秒放置的方块数
             double bps = 1.0 / timeDiff;
             blocksPerSecond.put(playerId, bps);
+            
+            // 显示搭路速度小标题，仅在放置方块时显示
+            String subtitle = ChatColor.AQUA + String.format("%.2f", bps) + ChatColor.GOLD + " 方块/秒";
+            player.sendTitle("", subtitle, 0, 40, 10); // 空标题，副标题显示速度，显示1.5秒 (0-40-10 ticks)
         }
         
         lastBlockPlaceTime.put(playerId, currentTime);
@@ -99,24 +100,5 @@ public class BridgeListener implements Listener {
             ItemStack sandstone = new ItemStack(Material.SANDSTONE, 64);
             player.getInventory().addItem(sandstone);
         }
-    }
-    
-    private void startSpeedDisplay(Player player) {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!player.isOnline()) {
-                    this.cancel();
-                    return;
-                }
-                
-                UUID playerId = player.getUniqueId();
-                double bps = blocksPerSecond.getOrDefault(playerId, 0.0);
-                
-                // 显示搭路速度小标题
-                String subtitle = "搭路速度: " + String.format("%.2f", bps) + " 方块/秒";
-                player.sendTitle("", subtitle, 0, 20, 0); // 空标题，副标题显示速度
-            }
-        }.runTaskTimerAsynchronously(plugin, 0L, 20L); // 每秒更新一次（20个tick）
     }
 }
