@@ -55,6 +55,11 @@ public class BridgeListener implements Listener {
         if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SURVIVAL) {
             ensureInfiniteSandstone(player);
         }
+        
+        // 传送玩家到全局出生点
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            teleportToSpawn(player);
+        }, 1L); // 延迟1个tick以确保玩家完全加入
     }
     
     @EventHandler
@@ -90,11 +95,10 @@ public class BridgeListener implements Listener {
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
             player.spigot().respawn();
             
-            // 重新发放物品
-            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                ensureInfiniteSandstone(player);
-            }, 5L); // 延迟1个tick确保复活完成
-        }, 1L); // 延迟1个tick执行复活
+            // 立即传送玩家到全局出生点并重新发放物品
+            teleportToSpawn(player);
+            ensureInfiniteSandstone(player);
+        }, 1L); // 延迟1个tick执行复活和传送
     }
     
     @EventHandler
@@ -319,5 +323,23 @@ public class BridgeListener implements Listener {
         
         // 清空该玩家的方块顺序记录
         playerPlacedBlocksOrder.remove(playerId);
+    }
+    
+    private void teleportToSpawn(Player player) {
+        // 检查是否有设置出生点
+        if (plugin.getConfig().contains("spawn.world")) {
+            String worldName = plugin.getConfig().getString("spawn.world");
+            double x = plugin.getConfig().getDouble("spawn.x");
+            double y = plugin.getConfig().getDouble("spawn.y");
+            double z = plugin.getConfig().getDouble("spawn.z");
+            float yaw = (float) plugin.getConfig().getDouble("spawn.yaw");
+            float pitch = (float) plugin.getConfig().getDouble("spawn.pitch");
+            
+            World world = plugin.getServer().getWorld(worldName);
+            if (world != null) {
+                Location spawnLocation = new Location(world, x, y, z, yaw, pitch);
+                player.teleport(spawnLocation);
+            }
+        }
     }
 }

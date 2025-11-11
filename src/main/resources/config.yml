@@ -1,0 +1,11 @@
+# NekoBridge 插件配置文件
+
+# 全局出生点设置
+# 如果未设置，玩家将使用世界的默认出生点
+spawn:
+  world: world
+  x: 0.0
+  y: 64.0
+  z: 0.0
+  yaw: 0.0
+  pitch: 0.0
