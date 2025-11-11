@@ -2,7 +2,9 @@ package neko.nekoBridge;
 
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -24,6 +26,8 @@ public class BridgeListener implements Listener {
     
     // 存储每个玩家最近放置方块的时间戳队列
     private final Map<UUID, Queue<Long>> blockPlaceTimes = new HashMap<>();
+    // 存储玩家放置的方块位置
+    private final Map<String, UUID> placedBlocks = new HashMap<>();
     private final NekoBridge plugin;
     
     public BridgeListener(NekoBridge plugin) {
@@ -54,6 +58,9 @@ public class BridgeListener implements Listener {
         // 清理玩家数据
         UUID playerId = event.getPlayer().getUniqueId();
         blockPlaceTimes.remove(playerId);
+        
+        // 清理玩家放置的方块记录
+        placedBlocks.entrySet().removeIf(entry -> entry.getValue().equals(playerId));
     }
     
     @EventHandler
@@ -81,6 +88,33 @@ public class BridgeListener implements Listener {
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
         
+        // 创造模式玩家可以破坏任何方块
+        if (player.getGameMode() == GameMode.CREATIVE) {
+            return;
+        }
+        
+        Block block = event.getBlock();
+        String blockKey = block.getWorld().getName() + "," + block.getX() + "," + block.getY() + "," + block.getZ();
+        
+        // 检查方块是否是玩家放置的
+        if (!placedBlocks.containsKey(blockKey)) {
+            // 不是玩家放置的方块，阻止破坏
+            event.setCancelled(true);
+            return;
+        }
+        
+        // 检查是否是放置该方块的玩家本人
+        UUID placerId = placedBlocks.get(blockKey);
+        if (!placerId.equals(player.getUniqueId())) {
+            // 不是放置者本人，阻止破坏
+            event.setCancelled(true);
+            return;
+        }
+        
+        // 是玩家自己放置的方块，允许破坏
+        // 移除记录
+        placedBlocks.remove(blockKey);
+        
         // 检查玩家是否使用钻石镐挖掘
         ItemStack itemInHand = player.getItemInHand();
         if (itemInHand != null && itemInHand.getType() == Material.DIAMOND_PICKAXE) {
@@ -96,6 +130,11 @@ public class BridgeListener implements Listener {
         
         // 确保玩家始终有沙石
         ensureInfiniteSandstone(player);
+        
+        // 记录玩家放置的方块
+        Block block = event.getBlock();
+        String blockKey = block.getWorld().getName() + "," + block.getX() + "," + block.getY() + "," + block.getZ();
+        placedBlocks.put(blockKey, playerId);
         
         long currentTime = System.currentTimeMillis();
         
