@@ -5,13 +5,13 @@ api-version: '1.18'
 authors: [ 不穿胖次の小奶猫 ]
 website: https://cnmsb.xin/
 
-commands:
-  setspawn:
-    description: 设置全局出生点
-    usage: /setspawn
-    permission: neko.bridge.setspawn
-
-permissions:
-  neko.bridge.setspawn:
-    description: 允许设置全局出生点
+commands:
+  setspawn:
+    description: 设置全局出生点
+    usage: /setspawn
+    permission: neko.bridge.setspawn
+
+permissions:
+  neko.bridge.setspawn:
+    description: 允许设置全局出生点
     default: op
