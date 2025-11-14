@@ -404,11 +404,6 @@ public class BridgeListener implements Listener {
             
             // 播放音效
             player.playSound(playerLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
-            
-            // 在标题中显示提示
-            player.sendTitle(ChatColor.RED + "警告", 
-                            ChatColor.YELLOW + "您已掉出世界边界，传送回出生点", 
-                            10, 60, 20);
         }
         // 检查是否是信标
         else if (block.getType() == Material.BEACON) {
@@ -436,6 +431,25 @@ public class BridgeListener implements Listener {
                     if (currentLoc.getBlockX() == blockLocation.getBlockX() && 
                         currentLoc.getBlockY() == blockLocation.getBlockY() && 
                         currentLoc.getBlockZ() == blockLocation.getBlockZ()) {
+                        
+                        // 显示倒计时
+                        player.sendTitle(ChatColor.GOLD + "传送倒计时", 
+                                        ChatColor.YELLOW + "3...", 
+                                        0, 20, 0);
+                        
+                        // 1秒后显示2...
+                        plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+                            player.sendTitle("", 
+                                            ChatColor.YELLOW + "2...", 
+                                            0, 20, 0);
+                        }, 20L);
+                        
+                        // 2秒后显示1...
+                        plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+                            player.sendTitle("", 
+                                            ChatColor.YELLOW + "1...", 
+                                            0, 20, 0);
+                        }, 40L);
                         
                         // 延迟3秒后传送
                         int teleportTaskId = plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
@@ -490,7 +504,7 @@ public class BridgeListener implements Listener {
             }
         }
         // 检查是否是金质压力板，并且玩家是刚移动到这个方块上
-        else if (block.getType() == Material.LIGHT_WEIGHTED_PRESSURE_PLATE &&
+        else if ((block.getType().name().equals("GOLD_PLATE") || block.getType().name().equals("LIGHT_WEIGHTED_PRESSURE_PLATE")) && 
             (previousBlock == null || !previousBlock.equals(blockKey))) {
             
             // 给玩家5秒速度3效果
