@@ -17,6 +17,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.World;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -41,6 +43,8 @@ public class BridgeListener implements Listener {
     private final Map<UUID, Location> playerSpawnPoints = new HashMap<>();
     // 存储玩家当前站立的方块位置，用于检测是否移动到了新的方块
     private final Map<UUID, String> playerCurrentBlock = new HashMap<>();
+    // 存储玩家在信标上的任务ID，用于取消任务
+    private final Map<UUID, Integer> playerBeaconTaskIds = new HashMap<>();
     private final NekoBridge plugin;
     
     public BridgeListener(NekoBridge plugin) {
@@ -83,6 +87,13 @@ public class BridgeListener implements Listener {
         // 取消退出消息显示
         event.setQuitMessage(null);
         
+        // 取消传送任务
+        Integer taskId = playerBeaconTaskIds.get(playerId);
+        if (taskId != null) {
+            plugin.getServer().getScheduler().cancelTask(taskId);
+            playerBeaconTaskIds.remove(playerId);
+        }
+        
         // 立即破坏该玩家放置的所有方块（不按顺序，因为玩家退出了）
         destroyPlayerBlocksImmediately(playerId, player.getWorld());
         
@@ -90,6 +101,7 @@ public class BridgeListener implements Listener {
         blockPlaceTimes.remove(playerId);
         playerSpawnPoints.remove(playerId);
         playerCurrentBlock.remove(playerId);
+        playerBeaconTaskIds.remove(playerId);
     }
     
     @EventHandler
@@ -380,27 +392,117 @@ public class BridgeListener implements Listener {
         
         Block block = blockLocation.getBlock();
         
-        // 检查是否是信标，并且玩家是刚移动到这个方块上
-        if (block.getType() == Material.BEACON) {
+        // 检查玩家Y坐标是否小于0
+        if (playerLocation.getY() < 0) {
+            // 传送玩家回出生点
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                teleportToPlayerSpawn(player);
+                
+                // 破坏玩家的方块
+                destroyPlayerBlocks(playerId, player.getWorld());
+            }, 1L);
+            
+            // 播放音效
+            player.playSound(playerLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
+            
+            // 在标题中显示提示
+            player.sendTitle(ChatColor.RED + "警告", 
+                            ChatColor.YELLOW + "您已掉出世界边界，传送回出生点", 
+                            10, 60, 20);
+        }
+        // 检查是否是信标
+        else if (block.getType() == Material.BEACON) {
             // 检查是否是刚移动到信标上
             if (previousBlock == null || !previousBlock.equals(blockKey)) {
+                // 取消之前的传送任务（如果有的话）
+                Integer oldTaskId = playerBeaconTaskIds.get(playerId);
+                if (oldTaskId != null) {
+                    plugin.getServer().getScheduler().cancelTask(oldTaskId);
+                }
                 
                 // 播放信标激活音效（使用1.12.2版本中可用的音效）
                 player.playSound(playerLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5F, 1.0F);
                 
-                // 检查同一Y坐标是否有其他信标
-                Location otherBeacon = findOtherBeaconAtY(blockLocation, player.getWorld());
+                // 显示提示信息
+                player.sendTitle(ChatColor.GOLD + "信标检测", 
+                                ChatColor.YELLOW + "请站稳3秒后传送...", 
+                                10, 60, 10);
                 
-                if (otherBeacon != null) {
-                    // 传送玩家到其他信标位置
-                    teleportToOtherBeacon(player, otherBeacon);
-                } else {
-                    // 如果没有其他信标，显示提示
-                    player.sendTitle(ChatColor.GOLD + "信标检测", 
-                                    ChatColor.YELLOW + "此Y坐标无其他信标", 
-                                    10, 40, 10);
-                }
+                // 等待玩家站稳1秒后再检查传送条件
+                int taskId = plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+                    // 检查玩家是否仍在同一位置
+                    Location currentLoc = player.getLocation().clone();
+                    currentLoc.setY(currentLoc.getY() - 1); // 脚下的方块
+                    if (currentLoc.getBlockX() == blockLocation.getBlockX() && 
+                        currentLoc.getBlockY() == blockLocation.getBlockY() && 
+                        currentLoc.getBlockZ() == blockLocation.getBlockZ()) {
+                        
+                        // 延迟3秒后传送
+                        int teleportTaskId = plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+                            // 再次检查玩家是否仍在同一位置
+                            Location finalLoc = player.getLocation().clone();
+                            finalLoc.setY(finalLoc.getY() - 1); // 脚下的方块
+                            if (finalLoc.getBlockX() == blockLocation.getBlockX() && 
+                                finalLoc.getBlockY() == blockLocation.getBlockY() && 
+                                finalLoc.getBlockZ() == blockLocation.getBlockZ()) {
+                                
+                                // 检查同一Y坐标是否有其他信标
+                                Location otherBeacon = findOtherBeaconAtY(blockLocation, player.getWorld());
+                                
+                                if (otherBeacon != null) {
+                                    // 传送玩家到其他信标位置
+                                    teleportToOtherBeacon(player, otherBeacon);
+                                } else {
+                                    // 如果没有其他信标，显示提示
+                                    player.sendTitle(ChatColor.GOLD + "信标检测", 
+                                                    ChatColor.YELLOW + "此Y坐标无其他信标", 
+                                                    10, 40, 10);
+                                }
+                            }
+                            // 移除任务ID
+                            playerBeaconTaskIds.remove(playerId);
+                        }, 60L); // 延迟3秒（60 ticks）
+                        
+                        // 保存传送任务ID
+                        playerBeaconTaskIds.put(playerId, teleportTaskId);
+                    } else {
+                        // 玩家已移动，取消传送
+                        playerBeaconTaskIds.remove(playerId);
+                    }
+                }, 20L); // 等待1秒（20 ticks）确保玩家站稳
+                
+                // 保存任务ID
+                playerBeaconTaskIds.put(playerId, taskId);
             }
+        }
+        // 如果玩家离开信标，取消传送任务
+        else if (previousBlock != null && previousBlock.contains("BEACON")) {
+            // 取消传送任务
+            Integer oldTaskId = playerBeaconTaskIds.get(playerId);
+            if (oldTaskId != null) {
+                plugin.getServer().getScheduler().cancelTask(oldTaskId);
+                playerBeaconTaskIds.remove(playerId);
+                
+                // 显示取消提示
+                player.sendTitle(ChatColor.RED + "传送取消", 
+                                ChatColor.YELLOW + "您已离开信标", 
+                                10, 40, 10);
+            }
+        }
+        // 检查是否是金质压力板，并且玩家是刚移动到这个方块上
+        else if (block.getType() == Material.LIGHT_WEIGHTED_PRESSURE_PLATE &&
+            (previousBlock == null || !previousBlock.equals(blockKey))) {
+            
+            // 给玩家5秒速度3效果
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 100, 2)); // 100 ticks = 5秒, 等级3（2+1）
+            
+            // 播放音效
+            player.playSound(playerLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
+            
+            // 在标题中显示效果提示
+            player.sendTitle(ChatColor.GOLD + "速度提升", 
+                            ChatColor.GREEN + "获得速度III效果5秒", 
+                            10, 60, 20);
         }
         // 检查是否是红石块（完成点）并且玩家是刚移动到这个方块上
         else if (block.getType() == Material.REDSTONE_BLOCK && 
@@ -510,7 +612,7 @@ public class BridgeListener implements Listener {
         player.teleport(targetLocation);
         
         // 播放传送音效（使用1.12.2版本中可用的音效）
-        player.playSound(targetLocation, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
+        player.playSound(targetLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
         
         // 显示传送提示
         player.sendTitle(ChatColor.GOLD + "信标传送！", 
