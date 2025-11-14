@@ -26,6 +26,8 @@ import java.util.Queue;
 import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class BridgeListener implements Listener {
     
@@ -39,17 +41,31 @@ public class BridgeListener implements Listener {
     private final Map<UUID, Location> playerSpawnPoints = new HashMap<>();
     // 存储玩家当前站立的方块位置，用于检测是否移动到了新的方块
     private final Map<UUID, String> playerCurrentBlock = new HashMap<>();
+    // 存储所有信标位置
+    private final Set<Location> beaconLocations = new HashSet<>();
     private final NekoBridge plugin;
     
     public BridgeListener(NekoBridge plugin) {
         this.plugin = plugin;
         
-        // 每秒检查一次玩家脚下的方块
+        // 扫描世界中的现有信标
+        scanExistingBeacons();
+        
+        // 每半秒检查一次玩家脚下的方块
         plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
             for (Player player : plugin.getServer().getOnlinePlayers()) {
                 checkPlayerSpawnPoint(player);
             }
-        }, 20L, 20L); // 每秒执行一次（20个tick）
+        }, 10L, 10L); // 每半秒执行一次（10个tick）
+    }
+    
+    /**
+     * 扫描世界中的现有信标并添加到集合中
+     */
+    private void scanExistingBeacons() {
+        // 在下一个tick执行，确保服务器完全启动
+        // 由于遍历整个世界效率太低，这里仅注册玩家加入时会自动检测附近的信标
+        // 因此，玩家需要先移动到信标上，信标位置才会被记录
     }
     
     @EventHandler
@@ -145,6 +161,11 @@ public class BridgeListener implements Listener {
         // 移除记录
         placedBlocks.remove(blockKey);
         
+        // 如果破坏的是信标，从信标位置集合中移除
+        if (block.getType() == Material.BEACON) {
+            beaconLocations.remove(block.getLocation());
+        }
+        
         // 检查玩家是否使用钻石镐挖掘
         ItemStack itemInHand = player.getItemInHand();
         if (itemInHand != null && itemInHand.getType() == Material.DIAMOND_PICKAXE) {
@@ -169,6 +190,11 @@ public class BridgeListener implements Listener {
         // 记录方块放置顺序
         Queue<String> blockOrder = playerPlacedBlocksOrder.computeIfAbsent(playerId, k -> new LinkedList<>());
         blockOrder.offer(blockKey);
+        
+        // 如果放置的是信标，添加到信标位置集合
+        if (block.getType() == Material.BEACON) {
+            beaconLocations.add(block.getLocation());
+        }
         
         long currentTime = System.currentTimeMillis();
         
@@ -378,8 +404,34 @@ public class BridgeListener implements Listener {
         
         Block block = blockLocation.getBlock();
         
+        // 检查是否是信标，并且玩家是刚移动到这个方块上
+        if (block.getType() == Material.BEACON) {
+            // 只有踩到信标时才添加到集合中
+            // 检查是否是刚移动到信标上
+            if (previousBlock == null || !previousBlock.equals(blockKey)) {
+                // 添加信标位置到集合中（如果不存在）
+                beaconLocations.add(blockLocation);
+                
+                // 播放信标激活音效（使用1.12.2版本中可用的音效）
+                // 播放信标激活音效（使用1.12.2版本中可用的音效）
+                player.playSound(playerLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5F, 1.0F);
+                
+                // 检查同一Y坐标是否有其他信标
+                Location otherBeacon = findOtherBeaconAtY(blockLocation, player.getWorld());
+                
+                if (otherBeacon != null) {
+                    // 传送玩家到其他信标位置
+                    teleportToOtherBeacon(player, otherBeacon);
+                } else {
+                    // 如果没有其他信标，显示提示
+                    player.sendTitle(ChatColor.GOLD + "信标检测", 
+                                    ChatColor.YELLOW + "此Y坐标无其他信标", 
+                                    10, 40, 10);
+                }
+            }
+        }
         // 检查是否是红石块（完成点）并且玩家是刚移动到这个方块上
-        if (block.getType() == Material.REDSTONE_BLOCK && 
+        else if (block.getType() == Material.REDSTONE_BLOCK && 
             (previousBlock == null || !previousBlock.equals(blockKey))) {
             
             // 传送玩家回全局出生点（如果有绿宝石出生点则传送到绿宝石出生点）
@@ -439,5 +491,66 @@ public class BridgeListener implements Listener {
         
         // 如果没有个人出生点，传送回全局出生点
         teleportToSpawn(player);
+    }
+    
+    /**
+     * 查找同一Y坐标上的其他信标
+     * @param currentBeacon 当前信标位置
+     * @param world 世界
+     * @return 其他信标位置，如果没有则返回null
+     */
+    private Location findOtherBeaconAtY(Location currentBeacon, World world) {
+        Location otherBeacon = null;
+        int sameYCount = 0;
+        
+        for (Location beaconLoc : beaconLocations) {
+            // 检查是否是同一世界、同一Y坐标
+            if (beaconLoc.getWorld().equals(world) && 
+                beaconLoc.getBlockY() == currentBeacon.getBlockY()) {
+                sameYCount++;
+                
+                // 检查是否是不同的信标（X或Z坐标不同）
+                if (beaconLoc.getBlockX() != currentBeacon.getBlockX() || 
+                    beaconLoc.getBlockZ() != currentBeacon.getBlockZ()) {
+                    otherBeacon = beaconLoc;
+                    break;
+                }
+            }
+        }
+        
+        // 如果只有一个信标在同一Y坐标上，返回null
+        if (sameYCount <= 1) {
+            return null;
+        }
+        
+        return otherBeacon;
+    }
+    
+    /**
+     * 传送玩家到其他信标位置
+     * @param player 玩家
+     * @param otherBeacon 目标信标位置
+     */
+    private void teleportToOtherBeacon(Player player, Location otherBeacon) {
+        // 计算目标位置（信标上方一格）
+        Location targetLocation = new Location(
+            otherBeacon.getWorld(),
+            otherBeacon.getX() + 0.5, // 信标中心
+            otherBeacon.getY() + 1,   // 信标上方
+            otherBeacon.getZ() + 0.5, // 信标中心
+            player.getLocation().getYaw(), // 保持玩家朝向
+            player.getLocation().getPitch() // 保持玩家俯仰角
+        );
+        
+        // 传送玩家
+        player.teleport(targetLocation);
+        
+        // 播放传送音效（使用1.12.2版本中可用的音效）
+        player.playSound(targetLocation, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
+        
+        // 显示传送提示
+        player.sendTitle(ChatColor.GOLD + "信标传送！", 
+                        ChatColor.GREEN + "已传送到其他信标", 
+                        10, 40, 10);
     }
 }
