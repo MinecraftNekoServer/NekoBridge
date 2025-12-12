@@ -1,8 +1,8 @@
-package BridgingAnalyzer.utils;
+package NekoBridging.utils;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import BridgingAnalyzer.BridgingAnalyzer;
+import NekoBridging.Man;
 
 public abstract class ParticleRing {
     public ParticleRing(Location centerLoc, ParticleEffects type, long delay) {
@@ -15,7 +15,7 @@ public abstract class ParticleRing {
             Location particle = new Location(centerLoc.getWorld(), centerLoc.getX() + x, centerLoc.getY(), centerLoc.getZ() + z);
             type.display(0, 0, 0, 0, 1, particle, 64);
         }
-        Bukkit.getScheduler().runTaskLater(BridgingAnalyzer.getInstance(), this::onFinish, delay);
+        Bukkit.getScheduler().runTaskLater(Man.getInstance(), this::onFinish, delay);
     }
 
     public abstract void onFinish();

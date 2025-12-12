@@ -1,4 +1,4 @@
-package BridgingAnalyzer.utils;
+package NekoBridging.utils;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;

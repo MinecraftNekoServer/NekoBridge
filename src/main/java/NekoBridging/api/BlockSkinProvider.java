@@ -1,4 +1,4 @@
-package BridgingAnalyzer.api;
+package NekoBridging.api;
 
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;

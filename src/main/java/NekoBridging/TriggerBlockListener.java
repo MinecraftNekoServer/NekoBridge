@@ -1,4 +1,4 @@
-package BridgingAnalyzer;
+package NekoBridging;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -12,7 +12,7 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
-import BridgingAnalyzer.utils.*;
+import NekoBridging.utils.*;
 
 public class TriggerBlockListener implements Listener {
     @EventHandler
@@ -21,9 +21,9 @@ public class TriggerBlockListener implements Listener {
             if (e.getPlayer().getGameMode() == GameMode.CREATIVE) return;
             if (isTriggerBlock(e.getBlock().getRelative(BlockFace.DOWN)) || isTriggerBlock(e.getBlock().getRelative(BlockFace.DOWN,
                     2))) {
-                Bukkit.getScheduler().runTaskLater(BridgingAnalyzer.getInstance(), () -> {
+                Bukkit.getScheduler().runTaskLater(Man.getInstance(), () -> {
                     Utils.breakBlock(e.getBlock());
-                    BridgingAnalyzer.getCounter(e.getPlayer()).removeBlockRecord(e.getBlock());
+                    Man.getCounter(e.getPlayer()).removeBlockRecord(e.getBlock());
                 }, 100);
             }
         }
@@ -53,7 +53,7 @@ public class TriggerBlockListener implements Listener {
             Location spawnLoc = e.getTo().getBlock().getLocation().add(0.5, 1, 0.5);
             spawnLoc.setYaw(e.getPlayer().getLocation().getYaw());
             spawnLoc.setPitch(e.getPlayer().getLocation().getPitch());
-            Counter c = BridgingAnalyzer.getCounter(e.getPlayer());
+            Counter c = Man.getCounter(e.getPlayer());
             c.setCheckPoint(spawnLoc);
             new ParticleRing(e.getTo().getBlock().getLocation().add(0.5, 1.5, 0.5), ParticleEffects.CLOUD, 1) {
 
@@ -83,7 +83,7 @@ public class TriggerBlockListener implements Listener {
                 }
 
             };
-            BridgingAnalyzer.getCounter(e.getPlayer()).vectoryBreakBlock();
+            Man.getCounter(e.getPlayer()).vectoryBreakBlock();
             TitleUtils.sendTitle(e.getPlayer(), "§6§lVICTORY", "", 5, 20, 5);
             e.getPlayer().getWorld().playSound(e.getTo(), SoundMachine.getLevelUpSound(), 1, 1);
         }
@@ -102,7 +102,7 @@ public class TriggerBlockListener implements Listener {
             Location finalAttackFrom = player.getLocation().add(finalVector);
             finalAttackFrom.setY(player.getLocation().getY() + 1.2);
             Vector normalize = finalAttackFrom.toVector().subtract(player.getLocation().toVector()).normalize();
-            Bukkit.getScheduler().runTaskLater(BridgingAnalyzer.getInstance(), () -> {
+            Bukkit.getScheduler().runTaskLater(Man.getInstance(), () -> {
                 player.setNoDamageTicks(0);
                 player.damage(0.0);
                 player.setVelocity(normalize.multiply(-1.25).setY(0.45));
@@ -117,7 +117,7 @@ public class TriggerBlockListener implements Listener {
         if (e.getPlayer().getGameMode() == GameMode.SPECTATOR) return;
         if (e.getTo().getBlock().getRelative(BlockFace.DOWN).getType() == Material.LAPIS_BLOCK) {
             e.getPlayer().setNoDamageTicks(40);
-            Counter c = BridgingAnalyzer.getCounter(e.getPlayer());
+            Counter c = Man.getCounter(e.getPlayer());
             c.setCheckPoint(Bukkit.getWorld("world").getSpawnLocation().add(0.5, 1, 0.5));
             c.resetMax();
             new ParticleRing(e.getTo().getBlock().getLocation().add(0.5, 1.5,
@@ -125,8 +125,8 @@ public class TriggerBlockListener implements Listener {
 
                 @Override
                 public void onFinish() {
-                    BridgingAnalyzer.teleportCheckPoint(e.getPlayer());
-                    BridgingAnalyzer.clearEffect(e.getPlayer());
+                    Man.teleportCheckPoint(e.getPlayer());
+                    Man.clearEffect(e.getPlayer());
                     if (!e.getPlayer().isOp()) {
                         e.getPlayer().getInventory().setHelmet(null);
                         e.getPlayer().getInventory().setChestplate(null);

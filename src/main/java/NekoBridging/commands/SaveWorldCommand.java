@@ -1,4 +1,4 @@
-package BridgingAnalyzer.commands;
+package NekoBridging.commands;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -6,9 +6,9 @@ import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import BridgingAnalyzer.BridgingAnalyzer;
-import BridgingAnalyzer.Counter;
-import BridgingAnalyzer.utils.Utils;
+import NekoBridging.Man;
+import NekoBridging.Counter;
+import NekoBridging.utils.Utils;
 
 public class SaveWorldCommand implements CommandExecutor {
 
@@ -16,7 +16,7 @@ public class SaveWorldCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (sender.hasPermission("bridginganalyzer.admin")) {
             sender.sendMessage("§b§l搭路练习 §7>> §c正在保存世界....");
-            for (Counter c : BridgingAnalyzer.getCounters().values()) {
+            for (Counter c : Man.getCounters().values()) {
                 c.instantBreakBlock();
             }
             for (Block b : Counter.scheduledBreakBlocks) {

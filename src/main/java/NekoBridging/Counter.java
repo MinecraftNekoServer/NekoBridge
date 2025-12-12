@@ -1,4 +1,4 @@
-package BridgingAnalyzer;
+package NekoBridging;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -11,8 +11,8 @@ import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
-import BridgingAnalyzer.utils.SoundMachine;
-import BridgingAnalyzer.utils.Utils;
+import NekoBridging.utils.SoundMachine;
+import NekoBridging.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -47,7 +47,7 @@ public class Counter {
 
     public void addLogBlock(Block block) {
         allBlock.add(block);
-        BridgingAnalyzer.getPlacedBlocks().put(block, block.getState().getData());
+        Man.getPlacedBlocks().put(block, block.getState().getData());
     }
 
     public void breakBlock() {
@@ -58,7 +58,7 @@ public class Counter {
 
     public void countBridge(Block block) {
         allBlock.add(block);
-        BridgingAnalyzer.getPlacedBlocks().put(block, block.getState().getData());
+        Man.getPlacedBlocks().put(block, block.getState().getData());
         if ((lastBlock != null) && ((lastBlock.getY() + 1) != block.getY())) {
             counterBridge.add(System.currentTimeMillis());
             currentLength++;
@@ -124,14 +124,14 @@ public class Counter {
     public void instantBreakBlock() {
         for (Block b : allBlock) {
             Utils.breakBlock(b);
-            BridgingAnalyzer.getPlacedBlocks().remove(b);
+            Man.getPlacedBlocks().remove(b);
         }
         allBlock.clear();
     }
 
     public void removeBlockRecord(Block b) {
         allBlock.remove(b);
-        BridgingAnalyzer.getPlacedBlocks().remove(b);
+        Man.getPlacedBlocks().remove(b);
     }
 
     private void removeBridgeTimeout() {
@@ -168,7 +168,7 @@ public class Counter {
         checkPoint = loc;
         Block target = loc.add(0, -1, 0).getBlock().getRelative(BlockFace.DOWN, 3);
         if (target.getType() == Material.CHEST) {
-            BridgingAnalyzer.clearInventory(player);
+            Man.clearInventory(player);
             Chest chest = (Chest) target.getState();
             for (ItemStack stack : chest.getBlockInventory().getContents())
                 if (stack != null) {
@@ -184,7 +184,7 @@ public class Counter {
         player.teleport(checkPoint);
         Block target = checkPoint.getBlock().getRelative(BlockFace.DOWN, 3);
         if (target.getType() == Material.CHEST) {
-            BridgingAnalyzer.clearInventory(player);
+            Man.clearInventory(player);
             Chest chest = (Chest) target.getState();
             for (ItemStack stack : chest.getBlockInventory().getContents())
                 if (stack != null) {
@@ -204,7 +204,7 @@ public class Counter {
             if (b.getType() != Material.AIR) {
                 b.setType(Material.SEA_LANTERN);
             }
-        BridgingAnalyzer.teleportCheckPoint(player);
+        Man.teleportCheckPoint(player);
         breakBlock();
     }
 
@@ -220,7 +220,7 @@ public class Counter {
             if (tick > 3) {
                 tick = 3;
             }
-            task = Bukkit.getScheduler().runTaskTimer(BridgingAnalyzer.getInstance(), this, 10, tick);
+            task = Bukkit.getScheduler().runTaskTimer(Man.getInstance(), this, 10, tick);
         }
 
         @Override
@@ -231,11 +231,11 @@ public class Counter {
                     b = blocks.get(0);
                     scheduledBreakBlocks.remove(b);
                     blocks.remove(0);
-                    BridgingAnalyzer.getPlacedBlocks().remove(b);
+                    Man.getPlacedBlocks().remove(b);
                 }
                 if (b != null) {
                     Utils.breakBlock(b);
-                    BridgingAnalyzer.getPlacedBlocks().remove(b);
+                    Man.getPlacedBlocks().remove(b);
                 }
             } else {
                 task.cancel();

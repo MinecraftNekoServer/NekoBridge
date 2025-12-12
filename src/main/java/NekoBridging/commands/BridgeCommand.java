@@ -1,12 +1,12 @@
-package BridgingAnalyzer.commands;
+package NekoBridging.commands;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import BridgingAnalyzer.BridgingAnalyzer;
-import BridgingAnalyzer.Counter;
-import BridgingAnalyzer.utils.SendMessageUtils;
+import NekoBridging.Man;
+import NekoBridging.Counter;
+import NekoBridging.utils.SendMessageUtils;
 
 public class BridgeCommand implements CommandExecutor {
 
@@ -18,17 +18,16 @@ public class BridgeCommand implements CommandExecutor {
         }
         if (args.length != 1) {
             SendMessageUtils.sendMessage(sender,
-                    "§b§l搭路练习 §7>> §b§lBridgingAnalyzer | By.SakuraKooi",
+                    "§b§l搭路练习 §7>> §b§l梦幻次元 | By.梦幻网络",
                     "§b§l搭路练习 §7>> §e/bridge highlight    §a启用/禁用侧搭辅助指示",
                     "§b§l搭路练习 §7>> §e/bridge pvp         §a启用/禁用伤害屏蔽",
                     "§b§l搭路练习 §7>> §e/bridge speed       §a启用/禁用搭路速度统计",
                     "§b§l搭路练习 §7>> §e/bridge stand       §a启用/禁用走搭位置指示",
-                    "§b§l搭路练习 §7>> §d所配置的参数仅对您有效, 其他玩家不受影响",
-                    "§b§l搭路练习 §7>> §bhttps://github.com/SakuraKoi/BridgingAnalyzer"
+                    "§b§l搭路练习 §7>> §d所配置的参数仅对您有效, 其他玩家不受影响"
             );
             return true;
         }
-        Counter counter = BridgingAnalyzer.getCounter((Player) sender);
+        Counter counter = Man.getCounter((Player) sender);
         switch (args[0].toLowerCase()) {
             case "highlight": {
                 counter.setHighlightEnabled(!counter.isHighlightEnabled());

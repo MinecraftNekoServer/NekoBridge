@@ -1,9 +1,9 @@
-package BridgingAnalyzer.utils;
+package NekoBridging.utils;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.scheduler.BukkitTask;
-import BridgingAnalyzer.BridgingAnalyzer;
+import NekoBridging.Man;
 
 public abstract class TeleportRingEffect implements Runnable {
     int circleElements = 40;
@@ -24,7 +24,7 @@ public abstract class TeleportRingEffect implements Runnable {
         this.target = target;
         loc = centerLoc;
         this.dela = dela;
-        task = Bukkit.getScheduler().runTaskTimer(BridgingAnalyzer.getInstance(), this, delay, delay);
+        task = Bukkit.getScheduler().runTaskTimer(Man.getInstance(), this, delay, delay);
     }
 
     public abstract void onFinish();

@@ -1,4 +1,4 @@
-package BridgingAnalyzer;
+package NekoBridging;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -10,7 +10,7 @@ import org.bukkit.event.player.PlayerResourcePackStatusEvent.Status;
 public class ResourcePackLoader implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
-        Bukkit.getScheduler().runTaskLater(BridgingAnalyzer.getInstance(),
+        Bukkit.getScheduler().runTaskLater(Man.getInstance(),
                 () -> e.getPlayer().setResourcePack("https://raw.githubusercontent.com/SakuraKoi/FileCloud/texture/BridgingHelper.zip"), 10);
         // raw.githubusercontent.com在部分地区及网络环境下无法访问, 并不保证正常加载
     }

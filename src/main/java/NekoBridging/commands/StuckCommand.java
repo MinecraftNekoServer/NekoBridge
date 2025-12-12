@@ -1,4 +1,4 @@
-package BridgingAnalyzer.commands;
+package NekoBridging.commands;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -8,7 +8,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import BridgingAnalyzer.BridgingAnalyzer;
+import NekoBridging.Man;
 
 public class StuckCommand implements CommandExecutor {
 
@@ -25,7 +25,7 @@ public class StuckCommand implements CommandExecutor {
                 for (int y = -3; y < 3; y++) {
                     for (int z = -3; z < 3; z++) {
                         Block b = p.getLocation().add(x, y, z).getBlock();
-                        if (BridgingAnalyzer.isPlacedByPlayer(b)) {
+                        if (Man.isPlacedByPlayer(b)) {
                             b.setType(Material.AIR);
                         }
                     }

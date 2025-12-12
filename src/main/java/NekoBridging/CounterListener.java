@@ -1,4 +1,4 @@
-package BridgingAnalyzer;
+package NekoBridging;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -13,13 +13,13 @@ import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
-import BridgingAnalyzer.utils.ActionBarUtils;
-import BridgingAnalyzer.utils.TitleUtils;
+import NekoBridging.utils.ActionBarUtils;
+import NekoBridging.utils.TitleUtils;
 
 public class CounterListener implements Listener {
     @EventHandler
     public void onBreakBlock(BlockBreakEvent e) {
-        if (e.getPlayer() != null) if (!BridgingAnalyzer.isPlacedByPlayer(e.getBlock())) {
+        if (e.getPlayer() != null) if (!Man.isPlacedByPlayer(e.getBlock())) {
             if (e.getPlayer().getGameMode() == GameMode.CREATIVE) return;
             e.setCancelled(true);
         }
@@ -30,7 +30,7 @@ public class CounterListener implements Listener {
 
         if (e.getAction().toString().contains("CLICK")) {
             if (e.getAction() == Action.LEFT_CLICK_BLOCK) if (e.isCancelled()) return;
-            Counter c = BridgingAnalyzer.getCounter(e.getPlayer());
+            Counter c = Man.getCounter(e.getPlayer());
             c.countCPS();
             if (!c.isSpeedCountEnabled()) return;
             ActionBarUtils.sendActionBar(e.getPlayer(),
@@ -41,12 +41,12 @@ public class CounterListener implements Listener {
     @EventHandler
     public void onFallDown(PlayerMoveEvent e) {
         if (e.getTo().getY() < 0) {
-            Counter c = BridgingAnalyzer.getCounter(e.getPlayer());
+            Counter c = Man.getCounter(e.getPlayer());
             if (c.isSpeedCountEnabled()) {
                 TitleUtils.sendTitle(e.getPlayer(), "", "§cMax - " + c.getMaxBridgeSpeed() + " block/s", 1, 40, 1);
             }
             c.reset();
-            BridgingAnalyzer.teleportCheckPoint(e.getPlayer());
+            Man.teleportCheckPoint(e.getPlayer());
         }
     }
 
@@ -60,12 +60,12 @@ public class CounterListener implements Listener {
         if (e.isCancelled()) return;
         if (e.getPlayer() != null) {
             if (e.getPlayer().getGameMode() == GameMode.CREATIVE) return;
-            Counter c = BridgingAnalyzer.getCounter(e.getPlayer());
+            Counter c = Man.getCounter(e.getPlayer());
             c.countBridge(e.getBlock());
             if (c.isSpeedCountEnabled()) {
                 TitleUtils.sendTitle(e.getPlayer(), "", "§b" + c.getBridgeSpeed() + " block/s", 1, 40, 1);
             }
-            Bukkit.getScheduler().runTaskLater(BridgingAnalyzer.getInstance(), () -> e.getPlayer().getInventory().addItem(new ItemStack(e.getPlayer().getItemInHand().getType(), 1, (short) 0, e.getPlayer().getItemInHand().getData().getData())), 1);
+            Bukkit.getScheduler().runTaskLater(Man.getInstance(), () -> e.getPlayer().getInventory().addItem(new ItemStack(e.getPlayer().getItemInHand().getType(), 1, (short) 0, e.getPlayer().getItemInHand().getData().getData())), 1);
         }
     }
 
@@ -74,9 +74,9 @@ public class CounterListener implements Listener {
         if (e.isCancelled()) return;
         if (e.getPlayer() != null) {
             if (e.getPlayer().getGameMode() == GameMode.CREATIVE) return;
-            Counter c = BridgingAnalyzer.getCounter(e.getPlayer());
+            Counter c = Man.getCounter(e.getPlayer());
             c.addLogBlock(e.getBlockClicked().getRelative(e.getBlockFace()));
-            Bukkit.getScheduler().runTaskLater(BridgingAnalyzer.getInstance(), () -> e.getPlayer().getInventory().remove(Material.BUCKET), 1);
+            Bukkit.getScheduler().runTaskLater(Man.getInstance(), () -> e.getPlayer().getInventory().remove(Material.BUCKET), 1);
         }
     }
 }

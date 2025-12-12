@@ -1,10 +1,10 @@
-package BridgingAnalyzer;
+package NekoBridging;
 
 import org.bukkit.SandstoneType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Sandstone;
-import BridgingAnalyzer.api.BlockSkinProvider;
+import NekoBridging.api.BlockSkinProvider;
 
 public class DefaultBlockSkinProvider implements BlockSkinProvider {
     @Override

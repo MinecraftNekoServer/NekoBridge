@@ -1,4 +1,4 @@
-package BridgingAnalyzer;
+package NekoBridging;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -22,20 +22,20 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import BridgingAnalyzer.commands.*;
-import BridgingAnalyzer.utils.Metrics;
-import BridgingAnalyzer.utils.NoAIUtils;
-import BridgingAnalyzer.utils.TitleUtils;
-import BridgingAnalyzer.utils.Utils;
-import BridgingAnalyzer.api.BlockSkinProvider;
+import NekoBridging.commands.*;
+import NekoBridging.utils.Metrics;
+import NekoBridging.utils.NoAIUtils;
+import NekoBridging.utils.TitleUtils;
+import NekoBridging.utils.Utils;
+import NekoBridging.api.BlockSkinProvider;
 
 import java.util.HashMap;
 
-public class BridgingAnalyzer extends JavaPlugin implements Listener {
+public class Man extends JavaPlugin implements Listener {
     @Getter
-    private static BridgingAnalyzer instance;
+    private static Man instance;
     
-    public static BridgingAnalyzer getInstance() {
+    public static Man getInstance() {
         return instance;
     }
     @Getter
@@ -162,7 +162,7 @@ public class BridgingAnalyzer extends JavaPlugin implements Listener {
     @EventHandler
     public void onDamage(EntityDamageEvent e) {
         if (e.getEntity().getType() == EntityType.PLAYER) {
-            Counter c = BridgingAnalyzer.getCounter((Player) e.getEntity());
+            Counter c = Man.getCounter((Player) e.getEntity());
             if (e.getFinalDamage() > 20) {
                 c.reset();
                 teleportCheckPoint((Player) e.getEntity());
@@ -217,8 +217,8 @@ public class BridgingAnalyzer extends JavaPlugin implements Listener {
 
         Bukkit.getConsoleSender().sendMessage(new String[]{
                 "§bBridgingAnalyzer §7>> §f----------------------------------------------------------------",
-                "§bBridgingAnalyzer §7>> §a搭路练习 已加载 §bBy.SakuraKooi",
-                "§bBridgingAnalyzer §7>> §chttps://github.com/SakuraKoi/BridgingAnalyzer/",
+                "§bBridgingAnalyzer §7>> §a搭路练习 已加载 §bBy.梦幻网络",
+                "§bBridgingAnalyzer §7>> §chttps://github.com/MinecraftNekoServer/NekoBridge",
                 "§bBridgingAnalyzer §7>> §f----------------------------------------------------------------",
                 "§bBridgingAnalyzer §7>> §e踩在 §a绿宝石块 §e上可以设置传送点",
                 "§bBridgingAnalyzer §7>> §e踩在 §c红石块 §e上可以回到传送点",
@@ -258,7 +258,7 @@ public class BridgingAnalyzer extends JavaPlugin implements Listener {
                 e.setCancelled(true);
             } else if (state == 1) {
                 e.setCancelled(true);
-                BridgingAnalyzer.getCounter((Player) e.getDamager()).setPvPEnabled(true);
+                Man.getCounter((Player) e.getDamager()).setPvPEnabled(true);
                 TitleUtils.sendTitle((Player) e.getDamager(), "", "§c注意: §aPvP已开启", 10, 20, 10);
                 ((Player) e.getEntity()).damage(0.00);
                 ((Player) e.getEntity()).setNoDamageTicks(60);
@@ -272,7 +272,7 @@ public class BridgingAnalyzer extends JavaPlugin implements Listener {
                     e.setCancelled(true);
                 } else if (state == 1) {
                     e.setCancelled(true);
-                    BridgingAnalyzer.getCounter((Player) proj.getShooter()).setPvPEnabled(true);
+                    Man.getCounter((Player) proj.getShooter()).setPvPEnabled(true);
                     TitleUtils.sendTitle((Player) proj.getShooter(), "", "§c注意: §aPvP已开启", 10, 20, 10);
                     ((Player) e.getEntity()).damage(0.00);
                     ((Player) e.getEntity()).setNoDamageTicks(60);
@@ -283,8 +283,8 @@ public class BridgingAnalyzer extends JavaPlugin implements Listener {
     }
 
     private int onPvPDamage(Player player, Player damager) {
-        if (!BridgingAnalyzer.getCounter(player).isPvPEnabled()) return -1; // cancel
-        if (!BridgingAnalyzer.getCounter(damager).isPvPEnabled()) return 1; // enable
+        if (!Man.getCounter(player).isPvPEnabled()) return -1; // cancel
+        if (!Man.getCounter(damager).isPvPEnabled()) return 1; // enable
         return 0; // accept
     }
 

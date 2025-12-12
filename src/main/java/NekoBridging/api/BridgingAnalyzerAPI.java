@@ -1,67 +1,67 @@
-package BridgingAnalyzer.api;
+package NekoBridging.api;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import BridgingAnalyzer.BridgingAnalyzer;
+import NekoBridging.Man;
 
 public class BridgingAnalyzerAPI {
     public static void setBlockSkinProvider(BlockSkinProvider blockSkinProvider) {
-        BridgingAnalyzer.setBlockSkinProvider(blockSkinProvider);
+        Man.setBlockSkinProvider(blockSkinProvider);
     }
 
     public static void clearEffect(Player player) {
-        BridgingAnalyzer.clearEffect(player);
+        Man.clearEffect(player);
     }
 
     public static void clearInventory(Player player) {
-        BridgingAnalyzer.clearInventory(player);
+        Man.clearInventory(player);
     }
 
     public static void respawnVillager() {
-        BridgingAnalyzer.spawnVillager();
+        Man.spawnVillager();
     }
 
     public static boolean isPlacedByPlayer(Block block) {
-        return BridgingAnalyzer.isPlacedByPlayer(block);
+        return Man.isPlacedByPlayer(block);
     }
 
     public static void teleportCheckPoint(Player player) {
-        BridgingAnalyzer.teleportCheckPoint(player);
+        Man.teleportCheckPoint(player);
     }
 
     public static void refreshItem(Player p) {
-        BridgingAnalyzer.refreshItem(p);
+        Man.refreshItem(p);
     }
 
     public static void setPlayerHighlightEnabled(Player player, boolean enabled) {
-        BridgingAnalyzer.getCounter(player).setHighlightEnabled(enabled);
+        Man.getCounter(player).setHighlightEnabled(enabled);
     }
 
     public static void setPlayerPvPEnabled(Player player, boolean enabled) {
-        BridgingAnalyzer.getCounter(player).setPvPEnabled(enabled);
+        Man.getCounter(player).setPvPEnabled(enabled);
     }
 
     public static void setPlayerSpeedDisplayEnabled(Player player, boolean enabled) {
-        BridgingAnalyzer.getCounter(player).setSpeedCountEnabled(enabled);
+        Man.getCounter(player).setSpeedCountEnabled(enabled);
     }
 
     public static void setPlayerStandBridgeMarkerEnabled(Player player, boolean enabled) {
-        BridgingAnalyzer.getCounter(player).setStandBridgeMarkerEnabled(enabled);
+        Man.getCounter(player).setStandBridgeMarkerEnabled(enabled);
     }
 
     public static boolean isPlayerHighlightEnabled(Player player) {
-        return BridgingAnalyzer.getCounter(player).isHighlightEnabled();
+        return Man.getCounter(player).isHighlightEnabled();
     }
 
     public static boolean isPlayerPvPEnabled(Player player) {
-        return BridgingAnalyzer.getCounter(player).isPvPEnabled();
+        return Man.getCounter(player).isPvPEnabled();
     }
 
     public static boolean isPlayerSpeedDisplayEnabled(Player player) {
-        return BridgingAnalyzer.getCounter(player).isSpeedCountEnabled();
+        return Man.getCounter(player).isSpeedCountEnabled();
     }
 
     public static boolean isPlayerStandBridgeMarkerEnabled(Player player) {
-        return BridgingAnalyzer.getCounter(player).isStandBridgeMarkerEnabled();
+        return Man.getCounter(player).isStandBridgeMarkerEnabled();
     }
 }

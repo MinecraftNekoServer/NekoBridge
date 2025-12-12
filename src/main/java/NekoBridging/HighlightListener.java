@@ -1,4 +1,4 @@
-package BridgingAnalyzer;
+package NekoBridging;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
-import BridgingAnalyzer.utils.ParticleEffects;
+import NekoBridging.utils.ParticleEffects;
 
 import java.util.HashMap;
 
@@ -42,7 +42,7 @@ public class HighlightListener implements Listener {
     @SuppressWarnings("deprecation")
     @EventHandler
     public void onMove(PlayerMoveEvent e) {
-        if (!BridgingAnalyzer.getCounter(e.getPlayer()).isHighlightEnabled()) return;
+        if (!Man.getCounter(e.getPlayer()).isHighlightEnabled()) return;
         if (e.getFrom().getBlock() != e.getTo().getBlock()) {
             Block target = getRelativeBrick(roundLocation(e.getTo().clone().add(0, -1, 0)).getBlock());
             if (target != null) {
@@ -59,7 +59,7 @@ public class HighlightListener implements Listener {
 
     @EventHandler
     public void onStandBridgeMove(PlayerMoveEvent e) {
-        if (!BridgingAnalyzer.getCounter(e.getPlayer()).isStandBridgeMarkerEnabled()) return;
+        if (!Man.getCounter(e.getPlayer()).isStandBridgeMarkerEnabled()) return;
         ParticleEffects.TOWN_AURA.display(5, e.getTo().clone().add(0.08, 0.0, 0.08), 2);
     }
 

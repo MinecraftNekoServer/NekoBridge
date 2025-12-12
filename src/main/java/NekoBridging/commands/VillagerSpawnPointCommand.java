@@ -1,4 +1,4 @@
-package BridgingAnalyzer.commands;
+package NekoBridging.commands;
 
 import org.bukkit.Location;
 import org.bukkit.Material;

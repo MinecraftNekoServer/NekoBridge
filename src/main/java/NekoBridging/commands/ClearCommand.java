@@ -1,4 +1,4 @@
-package BridgingAnalyzer.commands;
+package NekoBridging.commands;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -8,8 +8,8 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import BridgingAnalyzer.BridgingAnalyzer;
-import BridgingAnalyzer.Counter;
+import NekoBridging.Man;
+import NekoBridging.Counter;
 
 public class ClearCommand implements CommandExecutor {
 
@@ -17,7 +17,7 @@ public class ClearCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (sender.hasPermission("bridginganalyzer.clear")) if (args.length == 0) {
             sender.sendMessage("§b§l搭路练习 §7>> §c正在清除所有已放置方块....");
-            for (Counter c : BridgingAnalyzer.getCounters().values()) {
+            for (Counter c : Man.getCounters().values()) {
                 c.instantBreakBlock();
             }
             for (Block b : Counter.scheduledBreakBlocks) {
@@ -36,7 +36,7 @@ public class ClearCommand implements CommandExecutor {
                 return true;
             }
             Player p = offp.getPlayer();
-            BridgingAnalyzer.getCounter(p).instantBreakBlock();
+            Man.getCounter(p).instantBreakBlock();
             sender.sendMessage("§b§l搭路练习 §7>> §a已清除玩家 " + p.getName() + " 放置的方块.");
         }
         return true;
