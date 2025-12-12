@@ -150,8 +150,8 @@ public class Man extends JavaPlugin implements Listener {
 
     @EventHandler
     public void logoutBreak(PlayerQuitEvent e) {
+        e.setQuitMessage(null); // 移除默认退出消息
         getCounter(e.getPlayer()).instantBreakBlock();
-        Bukkit.getConsoleSender().sendMessage("§bBridgingAnalyzer §7>> §a玩家 " + e.getPlayer().getName() + " 离线, 已清除其放置的方块.");
     }
 
     @EventHandler
@@ -232,9 +232,7 @@ public class Man extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
-        e.getPlayer().sendMessage(new String[]{
-                "§b§l搭路练习 §7>> §e输入 §6/bridge §e更改练习参数",
-        });
+        e.setJoinMessage(null); // 移除默认加入消息
         if (e.getPlayer().hasPermission("bridginganalyzer.noclear")) return;
         teleportCheckPoint(e.getPlayer());
     }
