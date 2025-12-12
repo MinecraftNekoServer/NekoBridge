@@ -85,7 +85,7 @@ public class TriggerBlockListener implements Listener {
             };
             BridgingAnalyzer.getCounter(e.getPlayer()).vectoryBreakBlock();
             TitleUtils.sendTitle(e.getPlayer(), "§6§lVICTORY", "", 5, 20, 5);
-            e.getPlayer().getWorld().playSound(e.getTo(), SoundMachine.get("LEVEL_UP", "ENTITY_PLAYER_LEVELUP"), 1, 1);
+            e.getPlayer().getWorld().playSound(e.getTo(), SoundMachine.getLevelUpSound(), 1, 1);
         }
     }
 

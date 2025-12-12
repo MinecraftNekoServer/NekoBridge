@@ -482,16 +482,27 @@ public enum ParticleEffects {
             if (initialized)
                 return;
             try {
-                version = Integer.parseInt(Character
-                        .toString(ReflectionUtils.PackageType
-                                .getServerVersion().charAt(3)));
+                String serverVersion = ReflectionUtils.PackageType.getServerVersion();
+                // 从v1_12_R1格式中提取版本号
+                if (serverVersion.startsWith("v")) {
+                    String[] parts = serverVersion.substring(1).split("_");
+                    if (parts.length >= 2) {
+                        version = Integer.parseInt(parts[1]); // 获取12部分
+                    } else {
+                        version = Integer.parseInt(parts[0]); // 如果格式不同，则使用第一部分
+                    }
+                } else {
+                    version = Integer.parseInt(Character
+                            .toString(ReflectionUtils.PackageType
+                                    .getServerVersion().charAt(3)));
+                }
+                
                 if (version > 7) {
                     enumParticle = ReflectionUtils.PackageType.MINECRAFT_SERVER
                             .getClass("EnumParticle");
                 }
                 Class<?> packetClass = ReflectionUtils.PackageType.MINECRAFT_SERVER
-                        .getClass(version < 7 ? "Packet63WorldParticles"
-                                : "PacketPlayOutWorldParticles");
+                        .getClass("PacketPlayOutWorldParticles");
                 packetConstructor = ReflectionUtils.getConstructor(packetClass
                 );
                 getHandle = ReflectionUtils.getMethod("CraftPlayer",
