@@ -1,4 +1,40 @@
-/.settings/
-/bin/
-/.idea/
-/classes/
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Maven
+target/
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+
+# Temporary files
+*.tmp
+*.backup
+
+# Local configuration
+local.properties
+config.yml
+
+# Spigot/Paper
+world/
+world_nether/
+world_the_end/
+server.properties
+eula.txt
+bukkit.yml
+spigot.yml
+paper.yml
