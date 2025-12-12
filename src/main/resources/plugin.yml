@@ -18,10 +18,18 @@ commands:
   bsaveworld:
     description: save the world
     usage: /bsaveworld
+  setspawn:
+    description: Set global spawn point
+    usage: /setspawn
+    permission: bridginganalyzer.setspawn
 permissions:
   bridginganalyzer.noclear:
     default: op
   bridginganalyzer.clear:
     default: op
   bridginganalyzer.admin:
+    default: op
+  bridginganalyzer.setspawn:
+    default: op
+  bridginganalyzer.setspawn.notify:
     default: op

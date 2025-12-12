@@ -29,6 +29,7 @@ import NekoBridging.utils.TitleUtils;
 import NekoBridging.utils.Utils;
 import NekoBridging.api.BlockSkinProvider;
 
+import org.bukkit.Location;
 import java.util.HashMap;
 
 public class Man extends JavaPlugin implements Listener {
@@ -44,6 +45,7 @@ public class Man extends JavaPlugin implements Listener {
     private static HashMap<Block, MaterialData> placedBlocks = new HashMap<>();
     @Setter
     private static BlockSkinProvider blockSkinProvider;
+    private static Location globalSpawnPoint = null; // 全局默认出生点
     
     public static HashMap<Block, MaterialData> getPlacedBlocks() {
         return placedBlocks;
@@ -51,6 +53,46 @@ public class Man extends JavaPlugin implements Listener {
     
     public static HashMap<Player, Counter> getCounters() {
         return counters;
+    }
+    
+    public static void setGlobalSpawnPoint(Location location) {
+        globalSpawnPoint = location;
+        // 保存到配置文件
+        if (instance != null) {
+            instance.saveGlobalSpawnPoint();
+        }
+    }
+    
+    public static Location getGlobalSpawnPoint() {
+        return globalSpawnPoint;
+    }
+    
+    private void loadGlobalSpawnPoint() {
+        if (getConfig().contains("global-spawn")) {
+            String worldName = getConfig().getString("global-spawn.world");
+            double x = getConfig().getDouble("global-spawn.x");
+            double y = getConfig().getDouble("global-spawn.y");
+            double z = getConfig().getDouble("global-spawn.z");
+            float yaw = (float) getConfig().getDouble("global-spawn.yaw", 0.0);
+            float pitch = (float) getConfig().getDouble("global-spawn.pitch", 0.0);
+            
+            org.bukkit.World world = Bukkit.getWorld(worldName);
+            if (world != null) {
+                globalSpawnPoint = new Location(world, x, y, z, yaw, pitch);
+            }
+        }
+    }
+    
+    private void saveGlobalSpawnPoint() {
+        if (globalSpawnPoint != null) {
+            getConfig().set("global-spawn.world", globalSpawnPoint.getWorld().getName());
+            getConfig().set("global-spawn.x", globalSpawnPoint.getX());
+            getConfig().set("global-spawn.y", globalSpawnPoint.getY());
+            getConfig().set("global-spawn.z", globalSpawnPoint.getZ());
+            getConfig().set("global-spawn.yaw", globalSpawnPoint.getYaw());
+            getConfig().set("global-spawn.pitch", globalSpawnPoint.getPitch());
+            saveConfig();
+        }
     }
 
     public static void clearEffect(Player player) {
@@ -114,6 +156,23 @@ public class Man extends JavaPlugin implements Listener {
         p.setNoDamageTicks(10);
         getCounter(p).teleportCheckPoint();
         p.setGameMode(GameMode.SURVIVAL);
+    }
+    
+    public static void teleportToGlobalSpawn(Player p) {
+        Location globalSpawn = getGlobalSpawnPoint();
+        if (globalSpawn != null) {
+            p.setFallDistance(0);
+            clearInventory(p);
+            p.getInventory().addItem(blockSkinProvider.provide(p));
+            p.setFoodLevel(20);
+            p.setHealth(20);
+            p.setNoDamageTicks(10);
+            p.teleport(globalSpawn);
+            p.setGameMode(GameMode.SURVIVAL);
+        } else {
+            // 如果没有设置全局出生点，则使用默认行为
+            teleportCheckPoint(p);
+        }
     }
 
     public static void refreshItem(Player p) {
@@ -209,6 +268,11 @@ public class Man extends JavaPlugin implements Listener {
         getCommand("bsaveworld").setExecutor(new SaveWorldCommand());
         getCommand("imstuck").setExecutor(new StuckCommand());
         getCommand("genvillager").setExecutor(new VillagerSpawnPointCommand());
+        getCommand("setspawn").setExecutor(new SetSpawnCommand()); // 设置全局出生点命令
+        
+        // 加载全局出生点
+        loadGlobalSpawnPoint();
+        
         spawnVillager();
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             if (Bukkit.getOnlinePlayers().isEmpty()) return;
@@ -234,7 +298,7 @@ public class Man extends JavaPlugin implements Listener {
     public void onJoin(PlayerJoinEvent e) {
         e.setJoinMessage(null); // 移除默认加入消息
         if (e.getPlayer().hasPermission("bridginganalyzer.noclear")) return;
-        teleportCheckPoint(e.getPlayer());
+        teleportToGlobalSpawn(e.getPlayer()); // 使用全局出生点
     }
 
     @EventHandler
