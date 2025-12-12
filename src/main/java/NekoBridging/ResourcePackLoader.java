@@ -18,13 +18,13 @@ public class ResourcePackLoader implements Listener {
     @EventHandler
     public void onRefuse(PlayerResourcePackStatusEvent e) {
         if (e.getStatus() == Status.ACCEPTED)
-            e.getPlayer().sendMessage("§b§lBridgingAnalyzer §7>> §e正在下载资源包, 请稍候...");
+            e.getPlayer().sendMessage("§b§l梦幻次元 §7>> §e正在下载资源包, 请稍候...");
         else if (e.getStatus() == Status.FAILED_DOWNLOAD)
-            e.getPlayer().sendMessage(new String[]{"§a§lBridgingAnalyzer §7>> §c资源包下载失败, 请重进游戏再试一次",
-                    "§a§lBridgingAnalyzer §7>> §c如果此情况反复出现, 请联系管理员"});
+            e.getPlayer().sendMessage(new String[]{"§a§l梦幻次元 §7>> §c资源包下载失败, 请重进游戏再试一次",
+                    "§a§l梦幻次元 §7>> §c如果此情况反复出现, 请联系管理员"});
         else if (e.getStatus() == Status.SUCCESSFULLY_LOADED)
-            e.getPlayer().sendMessage(new String[]{"", "§a§lBridgingAnalyzer §7>> §b此资源包对沙石添加了标记线以辅助您练习",
-                    "§a§lBridgingAnalyzer §7>> §e  顶端的红蓝线是走搭路线", "§a§lBridgingAnalyzer §7>> §e  侧面的指示线是推荐准心位置",
-                    "§a§lBridgingAnalyzer §7>> §a输入 /bridge 可以开关一些有用的功能", ""});
+            e.getPlayer().sendMessage(new String[]{"", "§a§l梦幻次元 §7>> §b此资源包对沙石添加了标记线以辅助您练习",
+                    "§a§l梦幻次元 §7>> §e顶端的红蓝线是走搭路线", "§a§l梦幻次元 §7>> §e侧面的指示线是推荐准心位置",
+                    "§a§l梦幻次元 §7>> §a输入 /bridge 可以开关一些有用的功能", ""});
     }
 }

@@ -203,7 +203,7 @@ public class Man extends JavaPlugin implements Listener {
         pluginManager.registerEvents(new HighlightListener(), this);
         pluginManager.registerEvents(new TriggerBlockListener(), this);
         // 资源包
-        // pluginManager.registerEvents(new ResourcePackLoader(), this);
+        pluginManager.registerEvents(new ResourcePackLoader(), this);
         getCommand("bridge").setExecutor(new BridgeCommand());
         getCommand("clearblock").setExecutor(new ClearCommand());
         getCommand("bsaveworld").setExecutor(new SaveWorldCommand());
