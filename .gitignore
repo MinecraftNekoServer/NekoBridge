@@ -28,13 +28,3 @@ Thumbs.db
 # Local configuration
 local.properties
 config.yml
-
-# Spigot/Paper
-world/
-world_nether/
-world_the_end/
-server.properties
-eula.txt
-bukkit.yml
-spigot.yml
-paper.yml
